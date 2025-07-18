@@ -10,6 +10,6 @@ export function formatCurrency(amount: number): string {
     style: 'currency',
     currency: 'EUR',
     minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
+    maximumFractionDigits: 0,
   }).format(amount)
 }
