@@ -1,4 +1,4 @@
-import { TrendingUp, TrendingDown, DollarSign, CreditCard } from "lucide-react"
+import { TrendingUp, TrendingDown, Euro, CreditCard } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
@@ -83,7 +83,7 @@ export function BudgetOverview() {
         <div className="pt-4 border-t">
           <div className="grid grid-cols-2 gap-3">
             <button className="flex items-center gap-2 p-3 text-sm font-medium bg-muted rounded-lg hover:bg-muted/80 transition-colors">
-              <DollarSign className="h-4 w-4" />
+              <Euro className="h-4 w-4" />
               Ajouter dépense
             </button>
             <button className="flex items-center gap-2 p-3 text-sm font-medium bg-muted rounded-lg hover:bg-muted/80 transition-colors">
