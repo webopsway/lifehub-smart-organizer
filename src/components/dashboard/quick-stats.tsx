@@ -1,5 +1,6 @@
 import { CheckSquare, ShoppingCart, DollarSign, Calendar } from "lucide-react"
 import { StatCard } from "@/components/ui/stat-card"
+import { formatCurrency } from "@/lib/utils"
 
 export function QuickStats() {
   return (
@@ -19,7 +20,7 @@ export function QuickStats() {
       
       <StatCard
         title="Budget restant"
-        value="340€"
+        value={formatCurrency(340)}
         icon={<DollarSign className="h-4 w-4" />}
         trend={{ value: -5, label: "vs semaine dernière", isPositive: false }}
       />

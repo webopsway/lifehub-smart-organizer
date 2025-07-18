@@ -2,6 +2,7 @@ import { TrendingUp, TrendingDown, DollarSign, CreditCard } from "lucide-react"
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Progress } from "@/components/ui/progress"
 import { Badge } from "@/components/ui/badge"
+import { formatCurrency } from "@/lib/utils"
 
 export function BudgetOverview() {
   const budgetData = [
@@ -28,7 +29,7 @@ export function BudgetOverview() {
         <div className="flex items-center justify-between p-4 bg-gradient-secondary rounded-lg">
           <div>
             <p className="text-sm text-muted-foreground">Budget restant ce mois</p>
-            <p className="text-2xl font-bold text-foreground">{remainingBudget}€</p>
+            <p className="text-2xl font-bold text-foreground">{formatCurrency(remainingBudget)}</p>
           </div>
           <div className="flex items-center gap-1">
             {remainingBudget > 0 ? (
@@ -60,7 +61,7 @@ export function BudgetOverview() {
                   </div>
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-muted-foreground">
-                      {item.spent}€ / {item.budget}€
+                      {formatCurrency(item.spent)} / {formatCurrency(item.budget)}
                     </span>
                     {isOverBudget && (
                       <Badge variant="destructive" className="text-xs">
