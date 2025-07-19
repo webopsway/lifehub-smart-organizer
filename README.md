@@ -1,73 +1,203 @@
-# Welcome to your Lovable project
+# 🏠 LifeHub Smart Organizer
 
-## Project info
+Une application complète de gestion personnelle avec un frontend React élégant et un backend FastAPI robuste.
 
-**URL**: https://lovable.dev/projects/70903ca8-3468-47ce-8fe9-ae99107ef6d2
+## 📋 Vue d'ensemble
 
-## How can I edit this code?
+LifeHub Smart Organizer est votre compagnon numérique pour organiser votre vie quotidienne. Il combine :
+- **Gestion de tâches** avec priorités et dates d'échéance
+- **Liste de courses** intelligente avec catégories
+- **Suivi budgétaire** avec aperçu en temps réel
+- **Interface moderne** responsive et intuitive
 
-There are several ways of editing your application.
+## 🏗️ Architecture
 
-**Use Lovable**
+```
+lifehub-smart-organizer/
+├── src/                    # Frontend React + TypeScript
+│   ├── components/         # Composants UI réutilisables
+│   ├── pages/             # Pages de l'application
+│   ├── hooks/             # Hooks personnalisés
+│   └── lib/               # Utilitaires et API client
+├── backend/               # API FastAPI + MySQL
+│   ├── app/               # Code de l'application
+│   │   ├── models/        # Modèles SQLAlchemy
+│   │   ├── routers/       # Endpoints API
+│   │   ├── schemas/       # Schémas Pydantic
+│   │   └── auth.py        # Authentification JWT
+│   └── docker-compose.yml # Services Docker
+└── README.md
+```
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/70903ca8-3468-47ce-8fe9-ae99107ef6d2) and start prompting.
+## 🚀 Démarrage rapide
 
-Changes made via Lovable will be committed automatically to this repo.
+### Option 1: Docker (Recommandé)
 
-**Use your preferred IDE**
+```bash
+# Démarrer le backend avec Docker
+cd backend
+docker-compose up -d
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# Dans un autre terminal, démarrer le frontend
+cd ../
+npm install
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+### Option 2: Installation manuelle
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+#### Backend (FastAPI + MySQL)
+```bash
+cd backend
 
-**Use GitHub Codespaces**
+# Installer les dépendances Python
+pip install -r requirements.txt
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+# Configurer la base de données
+# Créer un fichier .env basé sur .env.example
+cp .env.example .env
 
-## What technologies are used for this project?
+# Démarrer MySQL localement
+# Puis lancer l'API
+python run.py
+```
 
-This project is built with:
+#### Frontend (React + Vite)
+```bash
+# Installer les dépendances Node.js
+npm install
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+# Démarrer le serveur de développement
+npm run dev
+```
 
-## How can I deploy this project?
+## 📱 Fonctionnalités principales
 
-Simply open [Lovable](https://lovable.dev/projects/70903ca8-3468-47ce-8fe9-ae99107ef6d2) and click on Share -> Publish.
+### ✅ Gestion de tâches
+- Création, modification, suppression de tâches
+- Système de priorités (Faible, Normal, Urgent)
+- Dates d'échéance et suivi de progression
+- Interface drag & drop intuitive
 
-## Can I connect a custom domain to my Lovable project?
+### 🛒 Liste de courses
+- Organisation par catégories (Frais, Légumes, Épicerie, etc.)
+- Quantités et unités personnalisables
+- Prix estimés vs prix réels
+- Statistiques de courses
 
-Yes, you can!
+### 💰 Gestion budgétaire
+- Catégories de budget personnalisables
+- Suivi des dépenses en temps réel
+- Alertes de dépassement de budget
+- Aperçu mensuel et tendances
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+### 🔐 Authentification sécurisée
+- Inscription et connexion JWT
+- Gestion de profil utilisateur
+- Sessions sécurisées
+- Protection des données personnelles
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+## 🛠️ Technologies utilisées
+
+### Frontend
+- **React 18** + **TypeScript**
+- **Vite** pour le build et le dev server
+- **Tailwind CSS** pour le styling
+- **shadcn/ui** pour les composants
+- **TanStack Query** pour la gestion d'état
+- **React Router** pour la navigation
+
+### Backend
+- **FastAPI** framework Python moderne
+- **SQLAlchemy** ORM avec **MySQL**
+- **JWT** pour l'authentification
+- **Pydantic** pour la validation
+- **Alembic** pour les migrations
+
+### Infrastructure
+- **Docker** & **Docker Compose**
+- **MySQL 8.0** base de données
+- **Redis** pour le cache (optionnel)
+
+## 📊 Aperçu de l'interface
+
+L'interface propose :
+- **Tableau de bord** avec statistiques en temps réel
+- **Design responsive** mobile-first
+- **Animations fluides** et micro-interactions
+- **Mode sombre/clair** (à venir)
+- **Accessibilité** WCAG 2.1
+
+## 🔧 Configuration
+
+### Variables d'environnement
+
+**Backend** (`.env`)
+```env
+MYSQL_HOST=localhost
+MYSQL_USER=lifehub_user
+MYSQL_PASSWORD=your_password
+MYSQL_DATABASE=lifehub_db
+SECRET_KEY=your-secret-key
+```
+
+**Frontend** (`.env.local`)
+```env
+VITE_API_URL=http://localhost:8000/api
+```
+
+## 🧪 Tests et qualité
+
+```bash
+# Tests backend
+cd backend
+pytest
+
+# Tests frontend
+npm run test
+
+# Linting
+npm run lint
+```
+
+## 📚 API Documentation
+
+L'API est entièrement documentée avec OpenAPI/Swagger :
+- **Documentation interactive** : http://localhost:8000/docs
+- **ReDoc** : http://localhost:8000/redoc
+
+## 🚀 Déploiement
+
+### Production
+1. **Backend** : Utiliser Gunicorn + Nginx
+2. **Frontend** : Build static + CDN
+3. **Base de données** : MySQL managé
+4. **Monitoring** : Logs + métriques
+
+### Services cloud recommandés
+- **Vercel/Netlify** pour le frontend
+- **Railway/Heroku** pour le backend
+- **PlanetScale/AWS RDS** pour MySQL
+
+## 🤝 Contribution
+
+Les contributions sont les bienvenues !
+
+1. Fork le projet
+2. Créer une branche feature (`git checkout -b feature/amazing-feature`)
+3. Commit les changements (`git commit -m 'Add amazing feature'`)
+4. Push vers la branche (`git push origin feature/amazing-feature`)
+5. Ouvrir une Pull Request
+
+## 📄 Licence
+
+Ce projet est sous licence MIT. Voir le fichier `LICENSE` pour plus de détails.
+
+## 🆘 Support
+
+- **Issues** : [GitHub Issues](https://github.com/user/lifehub-smart-organizer/issues)
+- **Documentation** : [Wiki](https://github.com/user/lifehub-smart-organizer/wiki)
+
+---
+
+**Fait avec ❤️ pour améliorer votre productivité quotidienne**
