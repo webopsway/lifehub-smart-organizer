@@ -1,0 +1,51 @@
+# Dépendances (installées dans le conteneur)
+node_modules
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Build output (généré dans le conteneur)
+dist
+build
+
+# Fichiers de développement
+.git
+.gitignore
+README.md
+*.md
+
+# IDE
+.vscode
+.idea
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+logs
+*.log
+
+# Volumes Docker (déjà montés)
+volumes/
+
+# Tests
+coverage/
+.nyc_output/
+
+# Environment variables (montés comme volumes)
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Cache
+.cache/
+.parcel-cache/
+
+# Temporary files
+*.tmp
+*.temp 

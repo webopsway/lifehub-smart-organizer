@@ -19,7 +19,7 @@ BACKEND_DIR="$PROJECT_DIR/backend"
 
 # Fonction d'aide
 show_help() {
-    echo "Usage: $0 [OPTION]"
+    echo "Usage: $0 [OPTION] [FRONTEND_MODE]"
     echo ""
     echo "Options:"
     echo "  all        Démarrer frontend + backend (défaut)"
@@ -30,11 +30,21 @@ show_help() {
     echo "  logs       Voir les logs de tous les services"
     echo "  help       Afficher cette aide"
     echo ""
+    echo "Modes Frontend (optionnel):"
+    echo "  development  React dev server + hot reload (port 3000)"
+    echo "  production   nginx SSL optimisé (ports 80/443)"
+    echo "  hybrid       Dev server + nginx SSL simultanés"
+    echo ""
+    echo "Variables d'environnement:"
+    echo "  FRONTEND_MODE=development|production|hybrid"
+    echo "  VITE_API_URL=http://localhost:8000/api"
+    echo ""
     echo "Exemples:"
-    echo "  $0 all       # Démarrage complet"
-    echo "  $0 frontend  # Frontend uniquement"
-    echo "  $0 backend   # Backend uniquement"
-    echo "  $0 stop      # Arrêter tout"
+    echo "  $0 all                    # Tout avec frontend en mode development"
+    echo "  $0 all production         # Tout avec frontend en mode production"
+    echo "  $0 frontend development   # Frontend dev uniquement"
+    echo "  $0 frontend hybrid        # Frontend hybride uniquement"
+    echo "  $0 backend               # Backend uniquement"
 }
 
 # Fonction de vérification des prérequis
@@ -105,14 +115,58 @@ check_status() {
     echo "📊 Statut des services LifeHub:"
     echo "==============================="
     
-    # Frontend
+    # Frontend selon le mode
     echo ""
-    echo "🌐 Frontend (nginx SSL):"
-    if curl -k -s https://localhost/nginx-health > /dev/null 2>&1; then
-        echo "   ✅ Disponible sur https://localhost"
-    else
-        echo "   ❌ Non accessible"
+    echo "🌐 Frontend (conteneurisé):"
+    
+    # Détecter le mode actuel
+    local current_mode="unknown"
+    if docker ps --format "table {{.Names}}" | grep -q "lifehub_frontend"; then
+        current_mode=$(docker exec lifehub_frontend printenv NODE_ENV 2>/dev/null || echo "unknown")
     fi
+    
+    echo "   📋 Mode actuel: $current_mode"
+    
+    # Vérifier selon le mode
+    case "$current_mode" in
+        "development")
+            if curl -s http://localhost:3000 > /dev/null 2>&1; then
+                echo "   ✅ React Dev Server (port 3000): Disponible"
+            else
+                echo "   ❌ React Dev Server (port 3000): Non accessible"
+            fi
+            ;;
+        "production")
+            if curl -k -s https://localhost/nginx-health > /dev/null 2>&1; then
+                echo "   ✅ nginx SSL (port 443): Disponible"
+            else
+                echo "   ❌ nginx SSL (port 443): Non accessible"
+            fi
+            if curl -s http://localhost > /dev/null 2>&1; then
+                echo "   ✅ Redirection HTTP (port 80): Disponible"
+            else
+                echo "   ❌ Redirection HTTP (port 80): Non accessible"
+            fi
+            ;;
+        "hybrid")
+            dev_status="❌"
+            ssl_status="❌"
+            
+            if curl -s http://localhost:3000 > /dev/null 2>&1; then
+                dev_status="✅"
+            fi
+            
+            if curl -k -s https://localhost/nginx-health > /dev/null 2>&1; then
+                ssl_status="✅"
+            fi
+            
+            echo "   $dev_status React Dev Server (port 3000)"
+            echo "   $ssl_status nginx SSL (port 443)"
+            ;;
+        *)
+            echo "   ❌ Conteneur non démarré ou mode inconnu"
+            ;;
+    esac
     
     # Backend API
     echo ""
@@ -141,12 +195,19 @@ check_status() {
         echo "   ❌ Non accessible"
     fi
     
+    # Conteneurs Docker
+    echo ""
+    echo "🐳 Conteneurs actifs:"
+    docker ps --format "table {{.Names}}\t{{.Status}}\t{{.Ports}}" | grep -E "(lifehub|NAMES)"
+    
     echo ""
 }
 
 # Fonction pour démarrer le frontend
 start_frontend() {
-    echo "🌐 Démarrage du frontend..."
+    local frontend_mode=${FRONTEND_MODE:-development}
+    
+    echo "🌐 Démarrage du frontend en mode $frontend_mode..."
     
     if [ ! -d "$FRONTEND_DIR" ]; then
         echo "❌ Dossier frontend introuvable: $FRONTEND_DIR"
@@ -158,10 +219,11 @@ start_frontend() {
     # Vérifier si le script existe
     if [ -x "start-frontend.sh" ]; then
         echo "🚀 Utilisation du script de démarrage frontend..."
-        ./start-frontend.sh &
+        ./start-frontend.sh "$frontend_mode" &
         FRONTEND_PID=$!
     else
         echo "📦 Démarrage manuel du frontend..."
+        export NODE_ENV="$frontend_mode"
         docker-compose up --build -d
     fi
     
@@ -236,12 +298,16 @@ show_logs() {
 }
 
 # Traitement des arguments
+FRONTEND_MODE=${2:-development}
+export FRONTEND_MODE
+
 case "${1:-all}" in
     "all")
         check_requirements
         echo ""
         echo "🚀 Démarrage complet de LifeHub..."
         echo "Frontend nginx SSL + Backend API + MySQL + Redis"
+        echo "Frontend Mode: $FRONTEND_MODE"
         echo ""
         
         start_backend
@@ -259,25 +325,45 @@ case "${1:-all}" in
         echo "================================"
         echo ""
         echo "📍 Services disponibles :"
-        echo "   🌐 Frontend HTTPS  : https://localhost"
-        echo "   🔗 API Backend     : http://localhost:8000"
-        echo "   📚 Documentation   : http://localhost:8000/docs"
+        case "$FRONTEND_MODE" in
+            "development")
+                echo "   🔧 React Dev Server : http://localhost:3000 (hot reload)"
+                echo "   🔗 API Backend      : http://localhost:8000"
+                echo "   📚 Documentation    : http://localhost:8000/docs"
+                ;;
+            "production")
+                echo "   🌐 Frontend HTTPS   : https://localhost"
+                echo "   🔗 API Backend      : http://localhost:8000"
+                echo "   📚 Documentation    : http://localhost:8000/docs"
+                ;;
+            "hybrid")
+                echo "   🔧 React Dev Server : http://localhost:3000 (hot reload)"
+                echo "   🌐 Frontend HTTPS   : https://localhost"
+                echo "   🔗 API Backend      : http://localhost:8000"
+                echo "   📚 Documentation    : http://localhost:8000/docs"
+                ;;
+        esac
         echo "   🗄️  MySQL          : localhost:3306"
         echo "   🔴 Redis           : localhost:6379"
         echo ""
         echo "📁 Fichiers admin :"
         echo "   📄 Config Frontend : $(realpath .env-files/frontend.env)"
         echo "   📄 Config Backend  : $(realpath .env-files/backend.env)"
+        echo "   📂 Code React      : $(realpath frontend/src/) (temps réel)"
         echo "   📂 Logs Frontend   : $(realpath frontend/volumes/logs/)"
         echo "   📂 Logs Backend    : $(realpath backend/volumes/logs/)"
         echo "   💾 Données MySQL   : $(realpath backend/volumes/mysql/)"
         echo "   💾 Données Redis   : $(realpath backend/volumes/redis/)"
         echo ""
+        echo "🔧 Développement conteneurisé :"
+        echo "   docker exec -it lifehub_frontend bash   # Shell frontend"
+        echo "   docker exec -it lifehub_api bash        # Shell backend"
+        echo ""
         echo "⚠️  Utilisez '$0 stop' pour arrêter tous les services"
         echo ""
         
         # Attendre et suivre les logs
-        if [ "$2" = "--follow-logs" ]; then
+        if [ "$3" = "--follow-logs" ]; then
             echo "📊 Suivi des logs (Ctrl+C pour arrêter) :"
             show_logs
         fi
@@ -286,7 +372,7 @@ case "${1:-all}" in
     "frontend")
         check_requirements
         start_frontend
-        echo "✅ Frontend démarré"
+        echo "✅ Frontend démarré en mode $FRONTEND_MODE"
         ;;
         
     "backend")

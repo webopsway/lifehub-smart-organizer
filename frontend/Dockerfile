@@ -1,49 +1,63 @@
-# Build stage
-FROM node:18-alpine AS build
+# Frontend complet avec Node.js + nginx
+FROM node:18-alpine
 
+# Installer nginx et les outils nécessaires
+RUN apk add --no-cache \
+    nginx \
+    openssl \
+    curl \
+    bash \
+    git
+
+# Variables d'environnement
+ENV NODE_ENV=development
+ENV PORT=3000
+ENV NGINX_PORT=80
+ENV NGINX_SSL_PORT=443
+
+# Créer l'utilisateur pour les permissions
+RUN addgroup -g 1001 -S appuser && \
+    adduser -S -D -H -u 1001 -h /app -s /bin/bash -G appuser -g appuser appuser
+
+# Répertoire de travail
 WORKDIR /app
 
-# Copy package files
+# Copier les fichiers package pour cache Docker
 COPY package*.json ./
-RUN npm ci --only=production
 
-# Copy source code
+# Installer toutes les dépendances (dev + prod)
+RUN npm install && npm cache clean --force
+
+# Copier tout le code source React
 COPY . .
 
-# Build the application
-RUN npm run build
+# Créer les répertoires nécessaires
+RUN mkdir -p /var/log/nginx /etc/nginx/ssl /var/www/html && \
+    chown -R appuser:appuser /app /var/log/nginx /etc/nginx/ssl /var/www/html
 
-# Production stage with nginx
-FROM nginx:alpine
-
-# Install openssl for SSL generation
-RUN apk add --no-cache openssl
-
-# Copy custom nginx configuration
+# Copier la configuration nginx
 COPY nginx/nginx.conf /etc/nginx/nginx.conf
 
-# Copy built application
-COPY --from=build /app/dist /var/www/html
+# Script de démarrage multi-mode
+COPY start-container.sh /usr/local/bin/start-container.sh
+RUN chmod +x /usr/local/bin/start-container.sh
 
-# Create SSL directory
-RUN mkdir -p /etc/nginx/ssl
+# Changer d'utilisateur
+USER appuser
 
-# Copy SSL certificates (will be mounted as volume)
-VOLUME ["/etc/nginx/ssl"]
+# Exposer les ports
+EXPOSE 3000 80 443
 
-# Create nginx user for proper permissions
-RUN addgroup -g 1001 -S nginx && \
-    adduser -S -D -H -u 1001 -h /var/www/html -s /sbin/nologin -G nginx -g nginx nginx
+# Health check intelligent
+HEALTHCHECK --interval=30s --timeout=10s --start-period=30s --retries=3 \
+    CMD if [ "$NODE_ENV" = "development" ]; then \
+          curl -f http://localhost:3000 || exit 1; \
+        else \
+          curl -f http://localhost/nginx-health || exit 1; \
+        fi
 
-# Create log directory
-RUN mkdir -p /var/log/nginx && chown -R nginx:nginx /var/log/nginx
+# Volumes pour le développement
+VOLUME ["/app/node_modules", "/app/dist", "/etc/nginx/ssl"]
 
-# Expose ports
-EXPOSE 80 443
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD curl -f http://localhost/nginx-health || exit 1
-
-# Start nginx
-CMD ["nginx", "-g", "daemon off;"] 
+# Point d'entrée
+ENTRYPOINT ["/usr/local/bin/start-container.sh"] 
