@@ -65,12 +65,6 @@ check_requirements() {
         ((errors++))
     fi
     
-    # Node.js (pour le frontend)
-    if ! command -v node &> /dev/null; then
-        echo "❌ Node.js n'est pas installé"
-        ((errors++))
-    fi
-    
     # OpenSSL (pour SSL)
     if ! command -v openssl &> /dev/null; then
         echo "❌ OpenSSL n'est pas installé"
@@ -84,6 +78,7 @@ check_requirements() {
     fi
     
     echo "✅ Tous les prérequis sont satisfaits"
+    echo "ℹ️  Node.js embarqué dans le conteneur frontend (pas d'installation locale requise)"
 }
 
 # Fonction de nettoyage
