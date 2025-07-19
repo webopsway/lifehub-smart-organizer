@@ -22,10 +22,16 @@ app = FastAPI(
     lifespan=lifespan,
 )
 
-# Configuration CORS
+# Configuration CORS pour accepter les requêtes du frontend HTTPS
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.allowed_origins,
+    allow_origins=[
+        "https://localhost",
+        "https://lifehub.local", 
+        "http://localhost:5173",  # Vite dev server
+        "https://localhost:5173", # Vite dev server avec SSL
+        settings.frontend_url
+    ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
@@ -46,11 +52,12 @@ async def root():
         "message": "LifeHub API",
         "version": "1.0.0",
         "docs": "/docs",
-        "redoc": "/redoc"
+        "redoc": "/redoc",
+        "frontend": "https://localhost"
     }
 
 
 @app.get("/health")
 async def health_check():
     """Vérification de santé de l'API"""
-    return {"status": "healthy", "version": "1.0.0"} 
+    return {"status": "healthy", "version": "1.0.0", "service": "api"} 

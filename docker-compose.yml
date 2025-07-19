@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  frontend:
+    image: nginx:alpine
+    container_name: lifehub_frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./nginx/ssl:/etc/nginx/ssl:ro
+      - ./dist:/var/www/html:ro
+    command: ["nginx", "-g", "daemon off;"]
+
+volumes: {} 

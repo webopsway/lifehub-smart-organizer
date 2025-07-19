@@ -1,0 +1,53 @@
+version: '3.8'
+
+services:
+  frontend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: lifehub_frontend
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      # Configuration nginx
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      
+      # Certificats SSL montés depuis le disque
+      - ./volumes/ssl:/etc/nginx/ssl:rw
+      
+      # Logs nginx accessibles à l'admin
+      - ./volumes/logs:/var/log/nginx:rw
+      
+      # Sources React (optionnel pour développement)
+      - ./dist:/var/www/html:ro
+      
+      # Variables d'environnement
+      - ../.env-files/frontend.env:/app/.env:ro
+      
+    environment:
+      - NODE_ENV=production
+      - NGINX_HOST=localhost
+      - NGINX_PORT=443
+      
+    networks:
+      - lifehub_network
+      
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost/nginx-health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
+
+networks:
+  lifehub_network:
+    driver: bridge
+    external: false
+
+volumes:
+  ssl_certs:
+    driver: local
+  nginx_logs:
+    driver: local 

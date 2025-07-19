@@ -1,22 +1,49 @@
 version: '3.8'
 
 services:
+  # MySQL Database
   mysql:
     image: mysql:8.0
     container_name: lifehub_mysql
     restart: unless-stopped
-    environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: lifehub_db
-      MYSQL_USER: lifehub_user
-      MYSQL_PASSWORD: lifehub_password
     ports:
       - "3306:3306"
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD:-rootpassword}
+      MYSQL_DATABASE: ${MYSQL_DATABASE:-lifehub_db}
+      MYSQL_USER: ${MYSQL_USER:-lifehub_user}
+      MYSQL_PASSWORD: ${MYSQL_PASSWORD:-lifehub_password}
     volumes:
-      - mysql_data:/var/lib/mysql
+      # Données MySQL montées sur le disque pour l'admin
+      - ./volumes/mysql:/var/lib/mysql:rw
+      
+      # Scripts d'initialisation
       - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
-    command: --default-authentication-plugin=mysql_native_password
+      
+      # Configuration MySQL personnalisée
+      - ./config/mysql.cnf:/etc/mysql/conf.d/custom.cnf:ro
+      
+      # Logs MySQL accessibles
+      - ./volumes/logs/mysql:/var/log/mysql:rw
+      
+    command: >
+      --default-authentication-plugin=mysql_native_password
+      --general-log=1
+      --general-log-file=/var/log/mysql/general.log
+      --log-error=/var/log/mysql/error.log
+      --slow-query-log=1
+      --slow-query-log-file=/var/log/mysql/slow.log
+      --long_query_time=2
+    networks:
+      - backend_network
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost", "-u", "root", "-p${MYSQL_ROOT_PASSWORD:-rootpassword}"]
+      interval: 30s
+      timeout: 10s
+      retries: 5
+      start_period: 60s
 
+  # Redis Cache
   redis:
     image: redis:7-alpine
     container_name: lifehub_redis
@@ -24,29 +51,80 @@ services:
     ports:
       - "6379:6379"
     volumes:
-      - redis_data:/data
+      # Données Redis montées sur le disque
+      - ./volumes/redis:/data:rw
+      
+      # Configuration Redis personnalisée
+      - ./config/redis.conf:/etc/redis/redis.conf:ro
+      
+      # Logs Redis accessibles
+      - ./volumes/logs/redis:/var/log/redis:rw
+      
+    command: redis-server /etc/redis/redis.conf
+    networks:
+      - backend_network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
 
+  # FastAPI Backend
   api:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: lifehub_api
     restart: unless-stopped
     ports:
       - "8000:8000"
-    environment:
-      MYSQL_HOST: mysql
-      MYSQL_PORT: 3306
-      MYSQL_USER: lifehub_user
-      MYSQL_PASSWORD: lifehub_password
-      MYSQL_DATABASE: lifehub_db
-      SECRET_KEY: your-super-secret-key-change-in-production
-      REDIS_URL: redis://redis:6379/0
     depends_on:
-      - mysql
-      - redis
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     volumes:
+      # Variables d'environnement montées
+      - ../.env-files/backend.env:/app/.env:ro
+      
+      # Logs API accessibles à l'admin
+      - ./volumes/logs/api:/app/logs:rw
+      
+      # Données uploads/fichiers
+      - ./volumes/data:/app/data:rw
+      
+      # Code source pour développement (optionnel)
       - ./app:/app/app:ro
-    command: uvicorn app.main:app --host 0.0.0.0 --port 8000 --reload
+      
+    environment:
+      - PYTHONPATH=/app
+      - ENVIRONMENT=production
+      - MYSQL_HOST=mysql
+      - REDIS_HOST=redis
+      
+    networks:
+      - backend_network
+      
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 60s
+
+networks:
+  backend_network:
+    driver: bridge
+    external: false
 
 volumes:
+  # Volumes nommés pour persistence
   mysql_data:
-  redis_data: 
+    driver: local
+  redis_data:
+    driver: local
+  api_logs:
+    driver: local
+  api_data:
+    driver: local 
