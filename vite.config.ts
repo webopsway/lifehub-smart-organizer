@@ -6,11 +6,7 @@ import path from "path";
 export default defineConfig({
   server: {
     host: true,
-    port: 5173,
-    https: {
-      key: './backend/nginx/ssl/lifehub.key',
-      cert: './backend/nginx/ssl/lifehub.crt'
-    }
+    port: 8080
   },
   plugins: [react()],
   resolve: {

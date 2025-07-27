@@ -1,5 +1,5 @@
-import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
-import { apiClient, User, LoginResponse } from '@/lib/api';
+import { useState, useEffect, createContext, useContext, ReactNode, createElement } from 'react';
+import { apiClient, type User, type LoginResponse } from '@/lib/api';
 
 interface AuthContextType {
   user: User | null;
@@ -104,7 +104,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     updateUser,
   };
 
-  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+  return createElement(AuthContext.Provider, { value }, children);
 }
 
 export function useAuth() {
@@ -113,4 +113,4 @@ export function useAuth() {
     throw new Error('useAuth must be used within an AuthProvider');
   }
   return context;
-} 
+}
